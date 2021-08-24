@@ -13,7 +13,7 @@ chown -R builduser:builduser ./*
 
 dnf -y builddep SPECS/*.spec
 su -c 'rpmbuild -bb SPECS/*.spec' builduser
-cp RPMS/x86-64/"$1"-*.rpm /github/workspace
+cp RPMS/x86_64/"$1"-*.rpm /github/workspace
 cd /github/workspace
 
 PACKAGE_FILE="$(echo "$1"-*.rpm)"
