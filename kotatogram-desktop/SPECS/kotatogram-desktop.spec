@@ -10,7 +10,7 @@
 
 Name: kotatogram-desktop
 Version: 1.4.3
-Release: 2%{?dist}
+Release: 3%{?dist}
 
 # Application and 3rd-party modules licensing:
 # * Telegram Desktop - GPLv3+ with OpenSSL exception -- main tarball;
