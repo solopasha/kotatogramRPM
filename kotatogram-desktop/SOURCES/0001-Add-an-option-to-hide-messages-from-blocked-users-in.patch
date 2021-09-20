@@ -77,7 +77,7 @@ index 799e2770e..0978c608c 100644
 -		setMedia(*media);
 +	UserId from = peerToUser(data.vfrom_id() ? peerFromMTP(*data.vfrom_id()) : PeerId(0));
 +	PeerData* pd = from ? history->owner().user(from) : history->peer;
-+	if (pd->isUser() && pd->asUser()->isBlocked() && BlockUsersInGroups()) {
++	if ((pd->isUser() && pd->asUser()->isBlocked()) && BlockUsersInGroups()) {
 +		const auto textWithEntities = TextWithEntities {
 +		TextUtilities::Clean(qs("The message from blocked user")),
 +		Api::EntitiesFromMTP(
