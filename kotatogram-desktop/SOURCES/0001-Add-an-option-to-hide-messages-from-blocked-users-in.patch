@@ -1,7 +1,7 @@
-From ffcac96bba53a72e6ccb9fcb225aa39ac8fac34c Mon Sep 17 00:00:00 2001
+From c9c3dcf891343c2eb415936c483ac390a94c6fa2 Mon Sep 17 00:00:00 2001
 From: Your Name <you@example.com>
-Date: Fri, 17 Sep 2021 08:56:25 -0700
-Subject: [PATCH] hide
+Date: Mon, 20 Sep 2021 04:01:12 -0700
+Subject: [PATCH] TD 3.1
 
 ---
  Telegram/Resources/langs/rewrites/en.json     |  1 +
@@ -41,10 +41,10 @@ index f42cd1b40..7c54812a0 100644
  	"ktg_settings_forward_retain_selection": "Сохранять выделение после пересылки",
  	"ktg_settings_forward_chat_on_click": "Открывать чат по клику",
 diff --git a/Telegram/SourceFiles/history/history_item_components.cpp b/Telegram/SourceFiles/history/history_item_components.cpp
-index 2cc6551a3..cf5ef1bc8 100644
+index 563cc4bcf..6535a7ba9 100644
 --- a/Telegram/SourceFiles/history/history_item_components.cpp
 +++ b/Telegram/SourceFiles/history/history_item_components.cpp
-@@ -352,7 +352,10 @@ void HistoryMessageReply::paint(
+@@ -355,7 +355,10 @@ void HistoryMessageReply::paint(
  	p.fillRect(rbar, bar);
  
  	if (w > st::msgReplyBarSkip) {
@@ -56,17 +56,17 @@ index 2cc6551a3..cf5ef1bc8 100644
  			auto hasPreview = replyToMsg->media() ? replyToMsg->media()->hasReplyPreview() : false;
  			if (hasPreview && w < st::msgReplyBarSkip + st::msgReplyBarSize.height()) {
  				hasPreview = false;
-@@ -393,7 +396,7 @@ void HistoryMessageReply::paint(
- 			p.setFont(st::msgDateFont);
- 			auto &date = outbg ? (selected ? st::msgOutDateFgSelected : st::msgOutDateFg) : (selected ? st::msgInDateFgSelected : st::msgInDateFg);
- 			p.setPen((flags & PaintFlag::InBubble) ? date : st::msgDateImgFg);
+@@ -402,7 +405,7 @@ void HistoryMessageReply::paint(
+ 			p.setPen(inBubble
+ 				? stm->msgDateFg
+ 				: st->msgDateImgFg());
 -			p.drawTextLeft(x + st::msgReplyBarSkip, y + st::msgReplyPadding.top() + (st::msgReplyBarSize.height() - st::msgDateFont->height) / 2, w + 2 * x, st::msgDateFont->elided(replyToMsgId ? tr::lng_profile_loading(tr::now) : tr::lng_deleted_message(tr::now), w - st::msgReplyBarSkip));
 +			p.drawTextLeft(x + st::msgReplyBarSkip, y + st::msgReplyPadding.top() + (st::msgReplyBarSize.height() - st::msgDateFont->height) / 2, w + 2 * x, st::msgDateFont->elided((replyToMsgId && (!blocked || !BlockUsersInGroups())) ? tr::lng_profile_loading(tr::now) : tr::lng_deleted_message(tr::now), w - st::msgReplyBarSkip));
  		}
  	}
  }
 diff --git a/Telegram/SourceFiles/history/history_message.cpp b/Telegram/SourceFiles/history/history_message.cpp
-index 55592fa88..6a9c43c98 100644
+index 799e2770e..0978c608c 100644
 --- a/Telegram/SourceFiles/history/history_message.cpp
 +++ b/Telegram/SourceFiles/history/history_message.cpp
 @@ -495,16 +495,30 @@ HistoryMessage::HistoryMessage(
@@ -77,7 +77,7 @@ index 55592fa88..6a9c43c98 100644
 -		setMedia(*media);
 +	UserId from = peerToUser(data.vfrom_id() ? peerFromMTP(*data.vfrom_id()) : PeerId(0));
 +	PeerData* pd = from ? history->owner().user(from) : history->peer;
-+	if ((pd->isUser() && pd->asUser()->isBlocked()) && BlockUsersInGroups()) {
++	if (pd->isUser() && pd->asUser()->isBlocked() && BlockUsersInGroups()) {
 +		const auto textWithEntities = TextWithEntities {
 +		TextUtilities::Clean(qs("The message from blocked user")),
 +		Api::EntitiesFromMTP(
@@ -107,7 +107,7 @@ index 55592fa88..6a9c43c98 100644
  		setGroupId(
  			MessageGroupId::FromRaw(history->peer->id, groupedId->v));
 diff --git a/Telegram/SourceFiles/history/history_widget.cpp b/Telegram/SourceFiles/history/history_widget.cpp
-index 18de29407..ff81abe78 100644
+index 3afe0e8cb..8c5f74508 100644
 --- a/Telegram/SourceFiles/history/history_widget.cpp
 +++ b/Telegram/SourceFiles/history/history_widget.cpp
 @@ -13,6 +13,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
@@ -118,7 +118,7 @@ index 18de29407..ff81abe78 100644
  #include "boxes/confirm_box.h"
  #include "boxes/send_files_box.h"
  #include "boxes/share_box.h"
-@@ -632,6 +633,34 @@ HistoryWidget::HistoryWidget(
+@@ -640,6 +641,34 @@ HistoryWidget::HistoryWidget(
  		});
  	}, lifetime());
  
@@ -154,10 +154,10 @@ index 18de29407..ff81abe78 100644
  	) | rpl::start_with_next([=] {
  		crl::on_main(this, [=] {
 diff --git a/Telegram/SourceFiles/history/view/history_view_element.cpp b/Telegram/SourceFiles/history/view/history_view_element.cpp
-index 106b20641..db5ec3492 100644
+index e588bdb92..ee8133474 100644
 --- a/Telegram/SourceFiles/history/view/history_view_element.cpp
 +++ b/Telegram/SourceFiles/history/view/history_view_element.cpp
-@@ -27,6 +27,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
+@@ -28,6 +28,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
  #include "ui/toast/toast.h"
  #include "ui/toasts/common_toasts.h"
  #include "data/data_session.h"
@@ -165,7 +165,7 @@ index 106b20641..db5ec3492 100644
  #include "data/data_groups.h"
  #include "data/data_media_types.h"
  #include "lang/lang_keys.h"
-@@ -472,6 +473,12 @@ bool Element::isHiddenByGroup() const {
+@@ -477,6 +478,12 @@ bool Element::isHiddenByGroup() const {
  }
  
  bool Element::isHidden() const {
