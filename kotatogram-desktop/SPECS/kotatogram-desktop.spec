@@ -9,8 +9,8 @@
 # Applying toolchain configuration...
 
 Name: kotatogram-desktop
-Version: 1.4.3
-Release: 3%{?dist}
+Version: 1.4.4
+Release: 1%{?dist}
 
 # Application and 3rd-party modules licensing:
 # * Telegram Desktop - GPLv3+ with OpenSSL exception -- main tarball;
