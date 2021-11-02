@@ -139,15 +139,11 @@ cd %{appname}-%{version}-full
 # Building Telegram Desktop using cmake...
 %cmake -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DTDESKTOP_API_ID=611335 \
-    -DTDESKTOP_API_HASH=d524b414d21f4d37f08684c1df41ac9c \
+    -DTDESKTOP_API_TEST:BOOL=ON \
     -DCMAKE_AR=%{_bindir}/gcc-ar \
     -DCMAKE_RANLIB=%{_bindir}/gcc-ranlib \
     -DCMAKE_NM=%{_bindir}/gcc-nm \
-    -DDESKTOP_APP_USE_PACKAGED:BOOL=ON \
-    -DDESKTOP_APP_USE_PACKAGED_FONTS:BOOL=ON \
-    -DDESKTOP_APP_QT6:BOOL=OFF \
-    -DTDESKTOP_LAUNCHER_BASENAME=%{launcher}
+    -DDESKTOP_APP_QT6:BOOL=OFF
 %cmake_build
 
 %install
