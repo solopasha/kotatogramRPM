@@ -146,6 +146,7 @@ cd %{appname}-%{version}-full
     -DCMAKE_NM=%{_bindir}/gcc-nm \
     -DDESKTOP_APP_USE_PACKAGED:BOOL=ON \
     -DDESKTOP_APP_USE_PACKAGED_FONTS:BOOL=ON \
+    -DDESKTOP_APP_QT6:BOOL=OFF \
     -DTDESKTOP_LAUNCHER_BASENAME=%{launcher}
 %cmake_build
 
