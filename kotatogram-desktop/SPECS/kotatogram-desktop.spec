@@ -9,8 +9,8 @@
 # Applying toolchain configuration...
 
 Name: kotatogram-desktop
-Version: 1.4.4
-Release: 2%{?dist}
+Version: 3.1.13
+Release: 1%{?dist}
 
 # Application and 3rd-party modules licensing:
 # * Telegram Desktop - GPLv3+ with OpenSSL exception -- main tarball;
@@ -19,7 +19,7 @@ Release: 2%{?dist}
 License: GPLv3+ and LGPLv2+ and LGPLv3
 URL: https://github.com/kotatogram/%{appname}
 Summary: Experimental Telegram Desktop fork
-Patch0: 0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
+#Patch0: 0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
 
 # Telegram Desktop require more than 8 GB of RAM on linking stage.
 # Disabling all low-memory architectures.
@@ -120,10 +120,10 @@ business messaging needs.
 
 %prep
 rm -rf %{appname}-%{version}-full
-git clone --recurse-submodules https://github.com/kotatogram/%{appname}.git %{appname}-%{version}-full
+git clone --recurse-submodules https://github.com/telegramdesktop/tdesktop.git %{appname}-%{version}-full
 cd %{appname}-%{version}-full
 /usr/bin/chmod -Rf a+rX,u+w,g-w,o-w .
-%patch0 -p1
+#%patch0 -p1
 # Unbundling libraries...
 rm -rf Telegram/ThirdParty/{Catch,GSL,QR,SPMediaKeyTap,expected,fcitx-qt5,fcitx5-qt,hime,hunspell,libdbusmenu-qt,lz4,materialdecoration,minizip,nimf,qt5ct,range-v3,xxHash}
 
