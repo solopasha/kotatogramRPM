@@ -3,13 +3,13 @@
 %global _default_patch_fuzz 2
 
 # Telegram Desktop's constants...
-%global appname kotatogram-desktop
-%global launcher kotatogramdesktop
+%global appname tdesktop
+%global launcher telegram-desktop
 
 # Applying toolchain configuration...
 
-Name: kotatogram-desktop
-Version: 3.1.13
+Name: telegram-desktop
+Version: 3.2
 Release: 1%{?dist}
 
 # Application and 3rd-party modules licensing:
@@ -17,9 +17,9 @@ Release: 1%{?dist}
 # * rlottie - LGPLv2+ -- static dependency;
 # * qt_functions.cpp - LGPLv3 -- build-time dependency.
 License: GPLv3+ and LGPLv2+ and LGPLv3
-URL: https://github.com/kotatogram/%{appname}
+URL: https://github.com/telegramdesktop/%{appname}
 Summary: Experimental Telegram Desktop fork
-#Patch0: 0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
+Patch0: 0000-history_history.cpp.patch
 
 # Telegram Desktop require more than 8 GB of RAM on linking stage.
 # Disabling all low-memory architectures.
@@ -99,8 +99,8 @@ Requires: open-sans-fonts
 Requires: qt5-qtimageformats%{?_isa}
 
 # Short alias for the main package...
-Provides: kotatogram = %{?epoch:%{epoch}:}%{version}-%{release}
-Provides: kotatogram%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
+Provides: telegram = %{?epoch:%{epoch}:}%{version}-%{release}
+Provides: telegram%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 # Obsolete shared version of tg_owt...
 Obsoletes: tg_owt < 0-8
@@ -123,7 +123,7 @@ rm -rf %{appname}-%{version}-full
 git clone --recurse-submodules https://github.com/telegramdesktop/tdesktop.git %{appname}-%{version}-full
 cd %{appname}-%{version}-full
 /usr/bin/chmod -Rf a+rX,u+w,g-w,o-w .
-#%patch0 -p1
+%patch0 -p1
 # Unbundling libraries...
 rm -rf Telegram/ThirdParty/{Catch,GSL,QR,SPMediaKeyTap,expected,fcitx-qt5,fcitx5-qt,hime,hunspell,libdbusmenu-qt,lz4,materialdecoration,minizip,nimf,qt5ct,range-v3,xxHash}
 
