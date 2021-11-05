@@ -2,12 +2,12 @@
 %define debug_package %{nil}
 %global _default_patch_fuzz 2
 # Build conditionals (with - OFF, without - ON)...
-%bcond_without clang
-%bcond_with gtk3
+%bcond_with clang
+%bcond_without gtk3
 %bcond_with libtgvoip
 %bcond_with rlottie
-%bcond_with wayland
-%bcond_with webkit
+%bcond_without wayland
+%bcond_without webkit
 %bcond_without x11
 
 # Telegram Desktop's constants...
@@ -20,7 +20,7 @@
 %endif
 
 Name: telegram-desktop
-Version: 3.2.1
+Version: 3.2.0
 Release: 1%{?dist}
 
 # Application and 3rd-party modules licensing:
