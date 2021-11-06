@@ -71,6 +71,7 @@ BuildRequires: pkgconfig(opus)
 BuildRequires: pkgconfig(rnnoise)
 
 BuildRequires: cmake
+BuildRequires: extra-cmake-modules
 BuildRequires: desktop-file-utils
 BuildRequires: gcc
 BuildRequires: gcc-c++
