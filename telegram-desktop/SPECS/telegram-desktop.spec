@@ -6,8 +6,8 @@
 %bcond_without gtk3
 %bcond_with libtgvoip
 %bcond_with rlottie
-%bcond_without wayland
-%bcond_without webkit
+%bcond_with wayland
+%bcond_with webkit
 %bcond_without x11
 
 # Telegram Desktop's constants...
