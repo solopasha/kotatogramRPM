@@ -199,6 +199,7 @@ sed -e 's/QrCode\.hpp/qrcodegen\.hpp/g' -i {cmake/external/qr_code_generator/CMa
     -DDESKTOP_APP_USE_GLIBC_WRAPS:BOOL=OFF \
     -DDESKTOP_APP_DISABLE_CRASH_REPORTS:BOOL=ON \
     -DDESKTOP_APP_DISABLE_WEBRTC_INTEGRATION:BOOL=OFF \
+    -DDESKTOP_APP_QT6:BOOL=OFF \
 %if %{with gtk3}
     -DDESKTOP_APP_DISABLE_GTK_INTEGRATION:BOOL=OFF \
 %else
