@@ -20,7 +20,7 @@
 %endif
 
 Name: telegram-desktop
-Version: 3.2.0
+Version: 3.2.2
 Release: 1%{?dist}
 
 # Application and 3rd-party modules licensing:
@@ -31,7 +31,7 @@ License: GPLv3+ and LGPLv2+ and LGPLv3
 URL: https://github.com/telegramdesktop/%{appname}
 Summary: Telegram Desktop official messaging app
 Source0: %{url}/releases/download/v%{version}/%{appname}-%{version}-full.tar.gz
-Patch0: 0000-history_history.cpp.patch
+Patch0: 0001-disable-sponsored.patch
 
 # Telegram Desktop require more than 8 GB of RAM on linking stage.
 # Disabling all low-memory architectures.

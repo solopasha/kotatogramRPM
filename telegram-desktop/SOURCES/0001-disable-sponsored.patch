@@ -1,0 +1,25 @@
+From 67725936aad4b0931c0f7a348db29e90b966d704 Mon Sep 17 00:00:00 2001
+From: solopasha <pasha@solopasha.ru>
+Date: Sat, 6 Nov 2021 13:39:15 +0300
+Subject: [PATCH] disable sponsored
+
+---
+ Telegram/SourceFiles/data/data_sponsored_messages.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Telegram/SourceFiles/data/data_sponsored_messages.cpp b/Telegram/SourceFiles/data/data_sponsored_messages.cpp
+index cbddbc322..1bd4bf9be 100644
+--- a/Telegram/SourceFiles/data/data_sponsored_messages.cpp
++++ b/Telegram/SourceFiles/data/data_sponsored_messages.cpp
+@@ -93,7 +93,7 @@ bool SponsoredMessages::append(not_null<History*> history) {
+ }
+ 
+ bool SponsoredMessages::canHaveFor(not_null<History*> history) const {
+-	return history->isChannel();
++	return false;
+ }
+ 
+ void SponsoredMessages::request(not_null<History*> history) {
+-- 
+2.30.2
+
