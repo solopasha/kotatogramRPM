@@ -1,4 +1,4 @@
-FROM fedora:34
+FROM fedora:35
 RUN echo -e 'max_parallel_downloads=20\nfastestmirror=True' >> /etc/dnf/dnf.conf && \
     dnf -y install fedora-packager rpmdevtools sudo && \
     dnf -y install https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
