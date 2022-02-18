@@ -5,12 +5,13 @@
 # Telegram Desktop's constants...
 %global appname kotatogram-desktop
 %global launcher kotatogramdesktop
+%global _name telegram-desktop
 
 # Applying toolchain configuration...
 
 Name: kotatogram-desktop
-Version: 1.4.4
-Release: 2%{?dist}
+Version: 1.4.8
+Release: 1%{?dist}
 
 # Application and 3rd-party modules licensing:
 # * Telegram Desktop - GPLv3+ with OpenSSL exception -- main tarball;
@@ -19,7 +20,9 @@ Release: 2%{?dist}
 License: GPLv3+ and LGPLv2+ and LGPLv3
 URL: https://github.com/kotatogram/%{appname}
 Summary: Experimental Telegram Desktop fork
-Patch0: 0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
+#Patch0: 0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
+Patch0: %{_name}-desktop-validation-fix.patch
+Patch100: %{_name}-ffmpeg5.patch
 
 # Telegram Desktop require more than 8 GB of RAM on linking stage.
 # Disabling all low-memory architectures.
@@ -27,17 +30,11 @@ ExclusiveArch: x86_64
 
 BuildRequires: cmake(Microsoft.GSL)
 BuildRequires: cmake(OpenAL)
-BuildRequires: cmake(Qt5Core)
-BuildRequires: cmake(Qt5DBus)
-BuildRequires: cmake(Qt5Gui)
-BuildRequires: cmake(Qt5Network)
-BuildRequires: cmake(Qt5Widgets)
-BuildRequires: cmake(Qt5XkbCommonSupport)
-BuildRequires: cmake(Qt5Svg)
-BuildRequires: cmake(dbusmenu-qt5)
 BuildRequires: cmake(range-v3)
 BuildRequires: cmake(tg_owt)
 BuildRequires: cmake(tl-expected)
+BuildRequires: meson
+BuildRequires: pkgconfig(alsa)
 BuildRequires: pkgconfig(gio-2.0)
 BuildRequires: pkgconfig(glib-2.0)
 BuildRequires: pkgconfig(glibmm-2.4)
@@ -46,57 +43,68 @@ BuildRequires: pkgconfig(hunspell)
 BuildRequires: pkgconfig(jemalloc)
 BuildRequires: pkgconfig(libavcodec)
 BuildRequires: pkgconfig(libavformat)
-BuildRequires: pkgconfig(libavresample)
 BuildRequires: pkgconfig(libavutil)
 BuildRequires: pkgconfig(libcrypto)
 BuildRequires: pkgconfig(liblz4)
 BuildRequires: pkgconfig(liblzma)
+BuildRequires: pkgconfig(libpulse)
+BuildRequires: pkgconfig(libswresample)
 BuildRequires: pkgconfig(libswscale)
 BuildRequires: pkgconfig(libxxhash)
 BuildRequires: pkgconfig(openssl)
 BuildRequires: pkgconfig(opus)
+BuildRequires: pkgconfig(rnnoise)
+BuildRequires: pkgconfig(vpx)
+BuildRequires: pkgconfig(webkit2gtk-4.0)
 
 BuildRequires: cmake
-BuildRequires: extra-cmake-modules
 BuildRequires: desktop-file-utils
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: libappstream-glib
 BuildRequires: libatomic
+BuildRequires: libdispatch-devel
 BuildRequires: libqrcodegencpp-devel
 BuildRequires: libstdc++-devel
 BuildRequires: minizip-compat-devel
 BuildRequires: ninja-build
 BuildRequires: python3
-BuildRequires: qt5-qtbase-private-devel
-BuildRequires: pkgconfig(gtk+-3.0)
-BuildRequires: pkgconfig(webkit2gtk-4.0)
-Requires: gtk3%{?_isa}
-BuildRequires: pkgconfig(libpipewire-0.3)
-BuildRequires: pkgconfig(rnnoise)
-
-BuildRequires: cmake(KF5Wayland)
-BuildRequires: cmake(Qt5WaylandClient)
+BuildRequires: cmake(Qt6Core)
+BuildRequires: cmake(Qt6Core5Compat)
+BuildRequires: cmake(Qt6DBus)
+BuildRequires: cmake(Qt6Gui)
+BuildRequires: cmake(Qt6Network)
+BuildRequires: cmake(Qt6OpenGL)
+BuildRequires: cmake(Qt6OpenGLWidgets)
+BuildRequires: cmake(Qt6Svg)
+BuildRequires: cmake(Qt6Widgets)
+BuildRequires: qt6-qtbase-private-devel
+%{?_qt6:Requires: %{_qt6}%{?_isa} = %{_qt6_version}}
+Requires: qt6-qtimageformats%{?_isa}
+BuildRequires: cmake(PlasmaWaylandProtocols)
+BuildRequires: cmake(Qt6Concurrent)
+BuildRequires: cmake(Qt6WaylandClient)
+BuildRequires: pkgconfig(wayland-protocols)
+BuildRequires: qt6-qtbase-static
+Provides: bundled(kf5-kwayland) = 5.90.0
 BuildRequires: pkgconfig(wayland-client)
-BuildRequires: qt5-qtbase-static
+BuildRequires: extra-cmake-modules >= 5.90.0
 BuildRequires: pkgconfig(xcb)
 BuildRequires: pkgconfig(xcb-keysyms)
 BuildRequires: pkgconfig(xcb-record)
 BuildRequires: pkgconfig(xcb-screensaver)
-BuildRequires: pkgconfig(xcomposite)
-BuildRequires: pkgconfig(xdamage)
-BuildRequires: pkgconfig(xext)
-BuildRequires: pkgconfig(xfixes)
-BuildRequires: pkgconfig(xrender)
-BuildRequires: pkgconfig(xrandr)
-BuildRequires: pkgconfig(xtst)
+Requires: hicolor-icon-theme
+Requires: open-sans-fonts
+Requires: webkit2gtk3%{?_isa}
+# Telegram Desktop can use native open/save dialogs with XDG portals.
+Recommends: xdg-desktop-portal%{?_isa}
+Recommends: (xdg-desktop-portal-gnome%{?_isa} if gnome-shell%{?_isa})
+Recommends: (xdg-desktop-portal-kde%{?_isa} if plasma-workspace-wayland%{?_isa})
+Recommends: (xdg-desktop-portal-wlr%{?_isa} if wlroots%{?_isa})
 
 
 # Telegram Desktop require exact version of Qt due to Qt private API usage.
-%{?_qt5:Requires: %{_qt5}%{?_isa} = %{_qt5_version}}
-Requires: hicolor-icon-theme
-Requires: open-sans-fonts
-Requires: qt5-qtimageformats%{?_isa}
+
 
 # Short alias for the main package...
 Provides: kotatogram = %{?epoch:%{epoch}:}%{version}-%{release}
@@ -124,23 +132,18 @@ git clone --recurse-submodules https://github.com/kotatogram/%{appname}.git %{ap
 cd %{appname}-%{version}-full
 /usr/bin/chmod -Rf a+rX,u+w,g-w,o-w .
 %patch0 -p1
+%patch100 -p1
 # Unbundling libraries...
-rm -rf Telegram/ThirdParty/{Catch,GSL,QR,SPMediaKeyTap,expected,fcitx-qt5,fcitx5-qt,hime,hunspell,libdbusmenu-qt,lz4,materialdecoration,minizip,nimf,qt5ct,range-v3,xxHash}
+#rm -rf Telegram/ThirdParty/{GSL,QR,SPMediaKeyTap,dispatch,expected,extra-cmake-modules,fcitx-qt5,fcitx5-qt,jemalloc,hime,hunspell,lz4,materialdecoration,minizip,nimf,plasma-wayland-protocols,qt5ct,range-v3,wayland-protocols,xxHash}
 
-
-# Unbundling rlottie if build against packaged version...
-#rm -rf Telegram/ThirdParty/rlottie
-
-# Unbundling libtgvoip if build against packaged version...
-#rm -rf Telegram/ThirdParty/libtgvoip
 
 %build
 cd %{appname}-%{version}-full
 # Building Telegram Desktop using cmake...
 %cmake -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DTDESKTOP_API_ID=611335 \
-    -DTDESKTOP_API_HASH=d524b414d21f4d37f08684c1df41ac9c \
+    -DTDESKTOP_API_TEST=ON \
+    -DDESKTOP_APP_QT6:BOOL=ON \
     -DCMAKE_AR=%{_bindir}/gcc-ar \
     -DCMAKE_RANLIB=%{_bindir}/gcc-ranlib \
     -DCMAKE_NM=%{_bindir}/gcc-nm \
