@@ -1,0 +1,34 @@
+--- a/Telegram/SourceFiles/history/history_message.cpp
++++ b/Telegram/SourceFiles/history/history_message.cpp
+@@ -494,6 +494,11 @@ HistoryMessage::HistoryMessage(
+ 		FlagsFromMTP(id, data.vflags().v, localFlags),
+ 		data.vdate().v,
+ 		data.vfrom_id() ? peerFromMTP(*data.vfrom_id()) : PeerId(0)) {
++	UserId from = peerToUser(data.vfrom_id() ? peerFromMTP(*data.vfrom_id()) : PeerId(0));
++	PeerData* pd = from ? history->owner().user(from) : history->peer;
++	if (pd->isUser() && pd->asUser()->isBlocked()) {
++		return;
++	}
+ 	auto config = CreateConfig();
+ 	if (const auto forwarded = data.vfwd_from()) {
+ 		forwarded->match([&](const MTPDmessageFwdHeader &data) {
+--- a/Telegram/SourceFiles/history/view/history_view_message.cpp
++++ b/Telegram/SourceFiles/history/view/history_view_message.cpp
+@@ -436,6 +436,8 @@ void Message::applyGroupAdminChanges(
+ 
+ QSize Message::performCountOptimalSize() {
+ 	const auto item = message();
++	PeerData* pd = item->from();
++	if (pd->isUser() && pd->asUser()->isBlocked()) return QSize(0,0);
+ 	const auto media = this->media();
+ 
+ 	auto maxWidth = 0;
+@@ -631,6 +633,8 @@ void Message::draw(
+ 	}
+ 
+ 	const auto item = message();
++	PeerData* pd = item->from();
++	if (pd->isUser() && pd->asUser()->isBlocked()) return;
+ 	const auto media = this->media();
+ 
+ 	const auto outbg = hasOutLayout();
