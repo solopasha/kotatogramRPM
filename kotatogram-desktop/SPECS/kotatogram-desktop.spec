@@ -1,18 +1,16 @@
 %undefine __cmake_in_source_build
-%define debug_package %{nil}
-%global _lto_cflags %{nil}
+%undefine _auto_set_build_flags
 %global _default_patch_fuzz 2
 
 # Telegram Desktop's constants...
 %global appname kotatogram-desktop
 %global launcher kotatogramdesktop
 %global _name telegram-desktop
-
 # Applying toolchain configuration...
 
 Name: kotatogram-desktop
 Version: 1.4.8
-Release: 4%{?dist}
+Release: 5%{?dist}
 
 # Application and 3rd-party modules licensing:
 # * Telegram Desktop - GPLv3+ with OpenSSL exception -- main tarball;
@@ -61,6 +59,7 @@ BuildRequires: pkgconfig(vpx)
 BuildRequires: pkgconfig(webkit2gtk-4.0)
 
 BuildRequires: cmake
+BuildRequires: git
 BuildRequires: desktop-file-utils
 BuildRequires: gcc
 BuildRequires: gcc-c++
@@ -130,7 +129,6 @@ like SMS and email combined — and can take care of all your personal or
 business messaging needs.
 
 %prep
-rm -rf %{appname}-%{version}-full
 git clone --recurse-submodules https://github.com/kotatogram/%{appname}.git %{appname}-%{version}-full
 cd %{appname}-%{version}-full
 /usr/bin/chmod -Rf a+rX,u+w,g-w,o-w .
@@ -140,6 +138,10 @@ cd %{appname}-%{version}-full
 %patch100 -p1
 # Unbundling libraries...
 #rm -rf Telegram/ThirdParty/{GSL,QR,SPMediaKeyTap,dispatch,expected,extra-cmake-modules,fcitx-qt5,fcitx5-qt,jemalloc,hime,hunspell,lz4,materialdecoration,minizip,nimf,plasma-wayland-protocols,qt5ct,range-v3,wayland-protocols,xxHash}
+%set_build_flags \
+    CFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions         -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security         -fstack-clash-protection -fcf-protection -flto=auto" \
+    CXXFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions         -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security         -fstack-clash-protection -fcf-protection -Wp,-D_GLIBCXX_ASSERTIONS -flto=auto" \
+    LDFLAGS="-Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -flto=auto"
 
 
 %build
@@ -148,7 +150,6 @@ cd %{appname}-%{version}-full
 %cmake -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DTDESKTOP_API_TEST=ON \
-    -DDESKTOP_APP_QT6:BOOL=ON \
     -DCMAKE_AR=%{_bindir}/gcc-ar \
     -DCMAKE_RANLIB=%{_bindir}/gcc-ranlib \
     -DCMAKE_NM=%{_bindir}/gcc-nm \
@@ -172,7 +173,7 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{launcher}.desktop
 %{_metainfodir}/%{launcher}.metainfo.xml
 
 %changelog
-* Sat Feb 19 2022 solopasha <1@1.ru> - 1.4.2
+* Fri Feb 18 2022 solopasha <pasha@solopasha.ru> - 1.4.8
 - Version 1.4.8
 * Sat Aug 21 2021 solopasha <1@1.ru> - 1.4.2
 - Version 1.4.2
