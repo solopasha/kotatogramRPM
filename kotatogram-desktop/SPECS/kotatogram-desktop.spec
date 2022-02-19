@@ -1,7 +1,10 @@
 %undefine __cmake_in_source_build
-%define debug_package %{nil}
-%global _lto_cflags %{nil}
 %global _default_patch_fuzz 2
+
+%global enable_wayland 1
+%global enable_x11 1
+%global use_clang 0
+%global use_qt5 0
 
 # Telegram Desktop's constants...
 %global appname kotatogram-desktop
@@ -9,10 +12,15 @@
 %global _name telegram-desktop
 
 # Applying toolchain configuration...
+%if %{use_clang}
+%global toolchain clang
+%endif
 
 Name: kotatogram-desktop
 Version: 1.4.8
-Release: 4%{?dist}
+Release: 7%{?dist}
+
+%global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
 # Application and 3rd-party modules licensing:
 # * Telegram Desktop - GPLv3+ with OpenSSL exception -- main tarball;
@@ -21,6 +29,7 @@ Release: 4%{?dist}
 License: GPLv3+ and LGPLv2+ and LGPLv3
 URL: https://github.com/kotatogram/%{appname}
 Summary: Experimental Telegram Desktop fork
+Source0: kotatogram-desktop.tar.zst
 #Patch0: 0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
 Patch0: %{_name}-desktop-validation-fix.patch
 Patch1: no-add.patch
@@ -36,7 +45,7 @@ BuildRequires: cmake(OpenAL)
 BuildRequires: cmake(range-v3)
 BuildRequires: cmake(tg_owt)
 BuildRequires: cmake(tl-expected)
-BuildRequires: meson
+
 BuildRequires: pkgconfig(alsa)
 BuildRequires: pkgconfig(gio-2.0)
 BuildRequires: pkgconfig(glib-2.0)
@@ -61,6 +70,7 @@ BuildRequires: pkgconfig(vpx)
 BuildRequires: pkgconfig(webkit2gtk-4.0)
 
 BuildRequires: cmake
+BuildRequires: meson
 BuildRequires: desktop-file-utils
 BuildRequires: gcc
 BuildRequires: gcc-c++
@@ -72,6 +82,25 @@ BuildRequires: libstdc++-devel
 BuildRequires: minizip-compat-devel
 BuildRequires: ninja-build
 BuildRequires: python3
+
+%if %{use_clang}
+BuildRequires: compiler-rt
+BuildRequires: clang
+BuildRequires: llvm
+%endif
+
+%if %{use_qt5}
+BuildRequires: cmake(Qt5Core)
+BuildRequires: cmake(Qt5DBus)
+BuildRequires: cmake(Qt5Gui)
+BuildRequires: cmake(Qt5Network)
+BuildRequires: cmake(Qt5Svg)
+BuildRequires: cmake(Qt5Widgets)
+BuildRequires: cmake(Qt5XkbCommonSupport)
+BuildRequires: qt5-qtbase-private-devel
+%{?_qt5:Requires: %{_qt5}%{?_isa} = %{_qt5_version}}
+Requires: qt5-qtimageformats%{?_isa}
+%else
 BuildRequires: cmake(Qt6Core)
 BuildRequires: cmake(Qt6Core5Compat)
 BuildRequires: cmake(Qt6DBus)
@@ -84,21 +113,44 @@ BuildRequires: cmake(Qt6Widgets)
 BuildRequires: qt6-qtbase-private-devel
 %{?_qt6:Requires: %{_qt6}%{?_isa} = %{_qt6_version}}
 Requires: qt6-qtimageformats%{?_isa}
+%endif
+
+Provides: bundled(rlottie) = 0~git
+
+%if %{enable_wayland}
+%if %{use_qt5}
+BuildRequires: cmake(KF5Wayland)
+BuildRequires: cmake(Qt5Concurrent)
+BuildRequires: cmake(Qt5WaylandClient)
+BuildRequires: qt5-qtbase-static
+%else
 BuildRequires: cmake(PlasmaWaylandProtocols)
 BuildRequires: cmake(Qt6Concurrent)
 BuildRequires: cmake(Qt6WaylandClient)
 BuildRequires: pkgconfig(wayland-protocols)
 BuildRequires: qt6-qtbase-static
 Provides: bundled(kf5-kwayland) = 5.90.0
+%endif
 BuildRequires: pkgconfig(wayland-client)
 BuildRequires: extra-cmake-modules >= 5.90.0
+%endif
+
+%if %{enable_x11}
 BuildRequires: pkgconfig(xcb)
 BuildRequires: pkgconfig(xcb-keysyms)
 BuildRequires: pkgconfig(xcb-record)
 BuildRequires: pkgconfig(xcb-screensaver)
+%endif
+
+# Fedora now has a stripped ffmpeg. Make sure we're using the full version.
+%if 0%{?fedora} && 0%{?fedora} >= 36
+BuildRequires: ffmpeg-devel
+%endif
+
 Requires: hicolor-icon-theme
 Requires: open-sans-fonts
 Requires: webkit2gtk3%{?_isa}
+
 # Telegram Desktop can use native open/save dialogs with XDG portals.
 Recommends: xdg-desktop-portal%{?_isa}
 Recommends: (xdg-desktop-portal-gnome%{?_isa} if gnome-shell%{?_isa})
@@ -130,35 +182,51 @@ like SMS and email combined — and can take care of all your personal or
 business messaging needs.
 
 %prep
-rm -rf %{appname}-%{version}-full
-git clone --recurse-submodules https://github.com/kotatogram/%{appname}.git %{appname}-%{version}-full
-cd %{appname}-%{version}-full
-/usr/bin/chmod -Rf a+rX,u+w,g-w,o-w .
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch100 -p1
+%autosetup -n %{appname} -p1
 # Unbundling libraries...
 #rm -rf Telegram/ThirdParty/{GSL,QR,SPMediaKeyTap,dispatch,expected,extra-cmake-modules,fcitx-qt5,fcitx5-qt,jemalloc,hime,hunspell,lz4,materialdecoration,minizip,nimf,plasma-wayland-protocols,qt5ct,range-v3,wayland-protocols,xxHash}
 
 
 %build
-cd %{appname}-%{version}-full
 # Building Telegram Desktop using cmake...
 %cmake -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DTDESKTOP_API_TEST=ON \
-    -DDESKTOP_APP_QT6:BOOL=ON \
+%if %{use_clang}
+    -DCMAKE_C_COMPILER=%{_bindir}/clang \
+    -DCMAKE_CXX_COMPILER=%{_bindir}/clang++ \
+    -DCMAKE_AR=%{_bindir}/llvm-ar \
+    -DCMAKE_RANLIB=%{_bindir}/llvm-ranlib \
+    -DCMAKE_LINKER=%{_bindir}/llvm-ld \
+    -DCMAKE_OBJDUMP=%{_bindir}/llvm-objdump \
+    -DCMAKE_NM=%{_bindir}/llvm-nm \
+%else
     -DCMAKE_AR=%{_bindir}/gcc-ar \
     -DCMAKE_RANLIB=%{_bindir}/gcc-ranlib \
     -DCMAKE_NM=%{_bindir}/gcc-nm \
+%endif
+    -DTDESKTOP_API_TEST=ON \
     -DDESKTOP_APP_USE_PACKAGED:BOOL=ON \
     -DDESKTOP_APP_USE_PACKAGED_FONTS:BOOL=ON \
+    -DDESKTOP_APP_DISABLE_CRASH_REPORTS:BOOL=ON \
+%if %{use_qt5}
+    -DDESKTOP_APP_QT6:BOOL=OFF \
+%else
+    -DDESKTOP_APP_QT6:BOOL=ON \
+%endif
+%if %{enable_wayland}
+    -DDESKTOP_APP_DISABLE_WAYLAND_INTEGRATION:BOOL=OFF \
+%else
+    -DDESKTOP_APP_DISABLE_WAYLAND_INTEGRATION:BOOL=ON \
+%endif
+%if %{enable_x11}
+    -DDESKTOP_APP_DISABLE_X11_INTEGRATION:BOOL=OFF \
+%else
+    -DDESKTOP_APP_DISABLE_X11_INTEGRATION:BOOL=ON \
+%endif
     -DTDESKTOP_LAUNCHER_BASENAME=%{launcher}
 %cmake_build
 
 %install
-cd %{appname}-%{version}-full
 %cmake_install
 
 %check
@@ -166,13 +234,17 @@ appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/%{launcher}.me
 desktop-file-validate %{buildroot}%{_datadir}/applications/%{launcher}.desktop
 
 %files
+%doc README.md changelog.txt
+%license LICENSE LEGAL
 %{_bindir}/%{name}
 %{_datadir}/applications/%{launcher}.desktop
 %{_datadir}/icons/hicolor/*/apps/*.png
 %{_metainfodir}/%{launcher}.metainfo.xml
 
 %changelog
-* Sat Feb 19 2022 solopasha <1@1.ru> - 1.4.2
+* Fri Feb 21 2022 solopasha <pasha@solopasha.ru> - 1.4.8-7
+- Add some stuff from telegram-desktop.spec
+* Fri Feb 18 2022 solopasha <pasha@solopasha.ru> - 1.4.8-6
 - Version 1.4.8
-* Sat Aug 21 2021 solopasha <1@1.ru> - 1.4.2
+* Sat Aug 21 2021 solopasha <pasha@solopasha.ru> - 1.4.2
 - Version 1.4.2
