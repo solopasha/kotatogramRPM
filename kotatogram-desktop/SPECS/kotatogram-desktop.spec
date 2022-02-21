@@ -1,6 +1,7 @@
 %undefine __cmake_in_source_build
 %undefine _auto_set_build_flags
 %global _default_patch_fuzz 2
+%define debug_package %{nil}
 
 # Telegram Desktop's constants...
 %global appname kotatogram-desktop
