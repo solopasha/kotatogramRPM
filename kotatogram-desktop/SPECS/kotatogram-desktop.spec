@@ -3,18 +3,12 @@
 
 %global enable_wayland 1
 %global enable_x11 1
-%global use_clang 0
 %global use_qt5 0
 
 # Telegram Desktop's constants...
 %global appname kotatogram-desktop
 %global launcher kotatogramdesktop
 %global _name telegram-desktop
-
-# Applying toolchain configuration...
-%if %{use_clang}
-%global toolchain clang
-%endif
 
 Name: kotatogram-desktop
 Version: 1.4.8
@@ -83,11 +77,6 @@ BuildRequires: minizip-compat-devel
 BuildRequires: ninja-build
 BuildRequires: python3
 
-%if %{use_clang}
-BuildRequires: compiler-rt
-BuildRequires: clang
-BuildRequires: llvm
-%endif
 
 %if %{use_qt5}
 BuildRequires: cmake(Qt5Core)
@@ -191,19 +180,9 @@ business messaging needs.
 # Building Telegram Desktop using cmake...
 %cmake -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-%if %{use_clang}
-    -DCMAKE_C_COMPILER=%{_bindir}/clang \
-    -DCMAKE_CXX_COMPILER=%{_bindir}/clang++ \
-    -DCMAKE_AR=%{_bindir}/llvm-ar \
-    -DCMAKE_RANLIB=%{_bindir}/llvm-ranlib \
-    -DCMAKE_LINKER=%{_bindir}/llvm-ld \
-    -DCMAKE_OBJDUMP=%{_bindir}/llvm-objdump \
-    -DCMAKE_NM=%{_bindir}/llvm-nm \
-%else
     -DCMAKE_AR=%{_bindir}/gcc-ar \
     -DCMAKE_RANLIB=%{_bindir}/gcc-ranlib \
     -DCMAKE_NM=%{_bindir}/gcc-nm \
-%endif
     -DTDESKTOP_API_TEST=ON \
     -DDESKTOP_APP_USE_PACKAGED:BOOL=ON \
     -DDESKTOP_APP_USE_PACKAGED_FONTS:BOOL=ON \

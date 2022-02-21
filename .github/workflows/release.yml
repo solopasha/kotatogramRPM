@@ -2,38 +2,62 @@ name: Create release
 
 on:
   push:
-    tags:
-      - "v*"
 
 jobs:
   kotatogram-desktop:
     runs-on: ubuntu-latest
     name: Build and publish kotatogram-desktop
+    container:
+      image: "fedora:35"
+      options: --privileged
+      volumes:
+        - /sys/fs/cgroup:/sys/fs/cgroup
+
     steps:
       - name: Checkout
         uses: actions/checkout@v1
       - name: Build
-        id: build
-        uses: ./
+        run: |
+          echo 'max_parallel_downloads=20' >> /etc/dnf/dnf.conf && \
+          dnf -y install fedora-packager rpmdevtools sudo https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+          https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
+          useradd -m builduser && \
+          echo 'builduser ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builduser && \
+          sudo -i -u builduser rpmdev-setuptree
+          bash entrypoint.sh kotatogram-desktop
+
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
         with:
-          package-name: kotatogram-desktop
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1.0.0
+          name: build--${{ env.VERSION }}
+          path: /home/builduser/rpmbuild/RPMS/x86_64/*
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: /home/builduser/rpmbuild/RPMS/x86_64/*
+          name: Kotatogram-desktop-${{ env.VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ steps.build.outputs.package-file }}
-          asset_name: ${{ steps.build.outputs.package-file }}
-          asset_content_type: application/octet-stream
+
+      # - name: Create Release
+      #   id: create_release
+      #   uses: actions/create-release@v1.0.0
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: ${{ github.ref }}
+      #     release_name: Release ${{ github.ref }}
+      #     draft: false
+      #     prerelease: false
+      # - name: Upload Release Asset
+      #   id: upload-release-asset
+      #   uses: actions/upload-release-asset@v1.0.1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: ./${{ steps.build.outputs.package-file }}
+      #     asset_name: ${{ steps.build.outputs.package-file }}
+      #     asset_content_type: application/octet-stream

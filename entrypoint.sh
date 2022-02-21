@@ -10,11 +10,12 @@ cp -r "$1"/* /home/builduser/rpmbuild
 
 pushd /home/builduser/rpmbuild > /dev/null
 chown -R builduser:builduser ./*
-
+VERSION=$(grep "Version:" kotatogram-desktop/SPECS/kotatogram-desktop.spec | sed -n '/.*Version: /s///p')
+echo "VERSION=$VERSION" >> $GITHUB_ENV
 dnf -y builddep SPECS/*.spec
 su -c 'rpmbuild -bb SPECS/*.spec' builduser
-cp RPMS/x86_64/"$1"-*.rpm /github/workspace
-cd /github/workspace
+# cp RPMS/x86_64/"$1"-*.rpm /github/workspace
+# cd /github/workspace
 
-PACKAGE_FILE="$(echo "$1"-*.rpm)"
-echo ::set-output name=package-file::"$PACKAGE_FILE"
+# PACKAGE_FILE="$(echo "$1"-*.rpm)"
+# echo ::set-output name=package-file::"$PACKAGE_FILE"
