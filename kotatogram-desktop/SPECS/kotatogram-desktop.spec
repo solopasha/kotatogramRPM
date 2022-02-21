@@ -10,7 +10,7 @@
 
 Name: kotatogram-desktop
 Version: 1.4.8
-Release: 5%{?dist}
+Release: 6%{?dist}
 
 # Application and 3rd-party modules licensing:
 # * Telegram Desktop - GPLv3+ with OpenSSL exception -- main tarball;
@@ -19,6 +19,7 @@ Release: 5%{?dist}
 License: GPLv3+ and LGPLv2+ and LGPLv3
 URL: https://github.com/kotatogram/%{appname}
 Summary: Experimental Telegram Desktop fork
+Source0: kotatogram-desktop.tar.zst
 #Patch0: 0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
 Patch0: %{_name}-desktop-validation-fix.patch
 Patch1: no-add.patch
@@ -129,37 +130,34 @@ like SMS and email combined — and can take care of all your personal or
 business messaging needs.
 
 %prep
-git clone --recurse-submodules https://github.com/kotatogram/%{appname}.git %{appname}-%{version}-full
-cd %{appname}-%{version}-full
-/usr/bin/chmod -Rf a+rX,u+w,g-w,o-w .
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch100 -p1
+%autosetup -n %{appname} -p1
 # Unbundling libraries...
 #rm -rf Telegram/ThirdParty/{GSL,QR,SPMediaKeyTap,dispatch,expected,extra-cmake-modules,fcitx-qt5,fcitx5-qt,jemalloc,hime,hunspell,lz4,materialdecoration,minizip,nimf,plasma-wayland-protocols,qt5ct,range-v3,wayland-protocols,xxHash}
-%set_build_flags \
-    CFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions         -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security         -fstack-clash-protection -fcf-protection -flto=auto" \
-    CXXFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions         -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security         -fstack-clash-protection -fcf-protection -Wp,-D_GLIBCXX_ASSERTIONS -flto=auto" \
-    LDFLAGS="-Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -flto=auto"
 
 
 %build
-cd %{appname}-%{version}-full
+%set_build_flags \
+    CFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -fstack-clash-protection -fcf-protection -flto=auto" \
+    CXXFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -fstack-clash-protection -fcf-protection -Wp,-D_GLIBCXX_ASSERTIONS -flto=auto -Wp,-U_GLIBCXX_ASSERTIONS" \
+    LDFLAGS="-Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -flto=auto"
 # Building Telegram Desktop using cmake...
 %cmake -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DTDESKTOP_API_TEST=ON \
+    -DTDESKTOP_API_TEST=ON
     -DCMAKE_AR=%{_bindir}/gcc-ar \
     -DCMAKE_RANLIB=%{_bindir}/gcc-ranlib \
     -DCMAKE_NM=%{_bindir}/gcc-nm \
     -DDESKTOP_APP_USE_PACKAGED:BOOL=ON \
     -DDESKTOP_APP_USE_PACKAGED_FONTS:BOOL=ON \
     -DTDESKTOP_LAUNCHER_BASENAME=%{launcher}
+
+%set_build_flags \
+    CFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -fstack-clash-protection -fcf-protection -flto=auto" \
+    CXXFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -fstack-clash-protection -fcf-protection -Wp,-D_GLIBCXX_ASSERTIONS -flto=auto -Wp,-U_GLIBCXX_ASSERTIONS" \
+    LDFLAGS="-Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now -flto=auto"
 %cmake_build
 
 %install
-cd %{appname}-%{version}-full
 %cmake_install
 
 %check
@@ -167,6 +165,8 @@ appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/%{launcher}.me
 desktop-file-validate %{buildroot}%{_datadir}/applications/%{launcher}.desktop
 
 %files
+%doc README.md changelog.txt
+%license LICENSE LEGAL
 %{_bindir}/%{name}
 %{_datadir}/applications/%{launcher}.desktop
 %{_datadir}/icons/hicolor/*/apps/*.png
