@@ -12,7 +12,7 @@
 
 Name: kotatogram-desktop
 Version: 1.4.8
-Release: 7%{?dist}
+Release: 10%{?dist}
 
 %global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
