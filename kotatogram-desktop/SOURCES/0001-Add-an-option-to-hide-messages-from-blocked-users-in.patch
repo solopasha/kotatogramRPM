@@ -1,26 +1,24 @@
-From c9c3dcf891343c2eb415936c483ac390a94c6fa2 Mon Sep 17 00:00:00 2001
-From: Your Name <you@example.com>
-Date: Mon, 20 Sep 2021 04:01:12 -0700
-Subject: [PATCH] TD 3.1
+From 51ec84e88a3c60d6ba65ba2400d76eea97ef7745 Mon Sep 17 00:00:00 2001
+From: Ilya Fedin <fedin-ilja2010@ya.ru>
+Date: Sun, 14 Jun 2020 03:25:53 +0400
+Subject: [PATCH] Add an option to hide messages from blocked users in groups
 
 ---
  Telegram/Resources/langs/rewrites/en.json     |  1 +
  Telegram/Resources/langs/rewrites/ru.json     |  1 +
- .../history/history_item_components.cpp       |  7 +++--
- .../SourceFiles/history/history_message.cpp   | 26 +++++++++++++----
- .../SourceFiles/history/history_widget.cpp    | 29 +++++++++++++++++++
- .../history/view/history_view_element.cpp     |  7 +++++
- Telegram/SourceFiles/kotato/json_settings.cpp |  5 ++++
- Telegram/SourceFiles/kotato/settings.cpp      | 11 +++++++
- Telegram/SourceFiles/kotato/settings.h        |  4 +++
- Telegram/SourceFiles/kotato/settings_menu.cpp |  1 +
- 10 files changed, 84 insertions(+), 8 deletions(-)
+ .../history/history_item_components.cpp       |  9 ++++-
+ .../SourceFiles/history/history_widget.cpp    | 30 ++++++++++++++
+ .../history/view/history_view_element.cpp     |  7 ++++
+ .../SourceFiles/kotato/kotato_settings.cpp    |  3 ++
+ .../kotato/kotato_settings_menu.cpp           |  1 +
+ Telegram/SourceFiles/main/main_session.cpp    | 40 +++++++++++++++++++
+ 8 files changed, 90 insertions(+), 2 deletions(-)
 
 diff --git a/Telegram/Resources/langs/rewrites/en.json b/Telegram/Resources/langs/rewrites/en.json
-index 95916a2fd..4ea107c78 100644
+index e50ac3e25..bd67e4d27 100644
 --- a/Telegram/Resources/langs/rewrites/en.json
 +++ b/Telegram/Resources/langs/rewrites/en.json
-@@ -168,6 +168,7 @@
+@@ -167,6 +167,7 @@
  	"ktg_admin_log_banned_send_games": "Send games",
  	"ktg_admin_log_banned_use_inline": "Use inline bots",
  	"ktg_forward_go_to_chat": "Go to chat",
@@ -29,10 +27,10 @@ index 95916a2fd..4ea107c78 100644
  	"ktg_settings_forward_retain_selection": "Retain selection after forward",
  	"ktg_settings_forward_chat_on_click": "Open chat on click",
 diff --git a/Telegram/Resources/langs/rewrites/ru.json b/Telegram/Resources/langs/rewrites/ru.json
-index f42cd1b40..7c54812a0 100644
+index 5f4c7e775..cb1509722 100644
 --- a/Telegram/Resources/langs/rewrites/ru.json
 +++ b/Telegram/Resources/langs/rewrites/ru.json
-@@ -186,6 +186,7 @@
+@@ -167,6 +167,7 @@
  	"ktg_admin_log_banned_send_games": "Отправка игр",
  	"ktg_admin_log_banned_use_inline": "Отправка через ботов",
  	"ktg_forward_go_to_chat": "Перейти в чат",
@@ -41,10 +39,18 @@ index f42cd1b40..7c54812a0 100644
  	"ktg_settings_forward_retain_selection": "Сохранять выделение после пересылки",
  	"ktg_settings_forward_chat_on_click": "Открывать чат по клику",
 diff --git a/Telegram/SourceFiles/history/history_item_components.cpp b/Telegram/SourceFiles/history/history_item_components.cpp
-index 563cc4bcf..6535a7ba9 100644
+index 09e2fe34e..1939d3570 100644
 --- a/Telegram/SourceFiles/history/history_item_components.cpp
 +++ b/Telegram/SourceFiles/history/history_item_components.cpp
-@@ -355,7 +355,10 @@ void HistoryMessageReply::paint(
+@@ -7,6 +7,7 @@ For license and copyright information please follow this link:
+ */
+ #include "history/history_item_components.h"
+ 
++#include "kotato/kotato_settings.h"
+ #include "kotato/kotato_lang.h"
+ #include "base/qt/qt_key_modifiers.h"
+ #include "lang/lang_keys.h"
+@@ -334,7 +335,11 @@ void HistoryMessageReply::paint(
  	p.fillRect(rbar, bar);
  
  	if (w > st::msgReplyBarSkip) {
@@ -52,77 +58,30 @@ index 563cc4bcf..6535a7ba9 100644
 +		auto blocked = replyToMsg
 +			&& replyToMsg->from()->isUser()
 +			&& replyToMsg->from()->asUser()->isBlocked();
-+		if (replyToMsg && (!blocked || !BlockUsersInGroups())) {
++		const auto blockUsersInGroups = ::Kotato::JsonSettings::GetBool("block_users_in_groups");
++		if (replyToMsg && (!blocked || !blockUsersInGroups)) {
  			auto hasPreview = replyToMsg->media() ? replyToMsg->media()->hasReplyPreview() : false;
  			if (hasPreview && w < st::msgReplyBarSkip + st::msgReplyBarSize.height()) {
  				hasPreview = false;
-@@ -402,7 +405,7 @@ void HistoryMessageReply::paint(
+@@ -380,7 +385,7 @@ void HistoryMessageReply::paint(
  			p.setPen(inBubble
  				? stm->msgDateFg
  				: st->msgDateImgFg());
 -			p.drawTextLeft(x + st::msgReplyBarSkip, y + st::msgReplyPadding.top() + (st::msgReplyBarSize.height() - st::msgDateFont->height) / 2, w + 2 * x, st::msgDateFont->elided(replyToMsgId ? tr::lng_profile_loading(tr::now) : tr::lng_deleted_message(tr::now), w - st::msgReplyBarSkip));
-+			p.drawTextLeft(x + st::msgReplyBarSkip, y + st::msgReplyPadding.top() + (st::msgReplyBarSize.height() - st::msgDateFont->height) / 2, w + 2 * x, st::msgDateFont->elided((replyToMsgId && (!blocked || !BlockUsersInGroups())) ? tr::lng_profile_loading(tr::now) : tr::lng_deleted_message(tr::now), w - st::msgReplyBarSkip));
++			p.drawTextLeft(x + st::msgReplyBarSkip, y + st::msgReplyPadding.top() + (st::msgReplyBarSize.height() - st::msgDateFont->height) / 2, w + 2 * x, st::msgDateFont->elided((replyToMsgId && (!blocked || !blockUsersInGroups)) ? tr::lng_profile_loading(tr::now) : tr::lng_deleted_message(tr::now), w - st::msgReplyBarSkip));
  		}
  	}
  }
-diff --git a/Telegram/SourceFiles/history/history_message.cpp b/Telegram/SourceFiles/history/history_message.cpp
-index 799e2770e..0978c608c 100644
---- a/Telegram/SourceFiles/history/history_message.cpp
-+++ b/Telegram/SourceFiles/history/history_message.cpp
-@@ -495,16 +495,30 @@ HistoryMessage::HistoryMessage(
- 
- 	createComponents(config);
- 
--	if (const auto media = data.vmedia()) {
--		setMedia(*media);
-+	UserId from = peerToUser(data.vfrom_id() ? peerFromMTP(*data.vfrom_id()) : PeerId(0));
-+	PeerData* pd = from ? history->owner().user(from) : history->peer;
-+	if ((pd->isUser() && pd->asUser()->isBlocked()) && BlockUsersInGroups()) {
-+		const auto textWithEntities = TextWithEntities {
-+		TextUtilities::Clean(qs("The message from blocked user")),
-+		Api::EntitiesFromMTP(
-+			&history->session(),
-+			data.ventities().value_or_empty())
-+		};
-+		setText(_media ? textWithEntities : EnsureNonEmpty(textWithEntities));
- 	}
--	const auto textWithEntities = TextWithEntities{
-+	else {
-+		if (const auto media = data.vmedia()) {
-+			setMedia(*media);
-+		}
-+		const auto textWithEntities = TextWithEntities {
- 		TextUtilities::Clean(qs(data.vmessage())),
--		Api::EntitiesFromMTP(
-+		Api::EntitiesFromMTP (
- 			&history->session(),
- 			data.ventities().value_or_empty())
--	};
--	setText(_media ? textWithEntities : EnsureNonEmpty(textWithEntities));
-+		};
-+		setText(_media ? textWithEntities : EnsureNonEmpty(textWithEntities));
-+	}
-+
- 	if (const auto groupedId = data.vgrouped_id()) {
- 		setGroupId(
- 			MessageGroupId::FromRaw(history->peer->id, groupedId->v));
 diff --git a/Telegram/SourceFiles/history/history_widget.cpp b/Telegram/SourceFiles/history/history_widget.cpp
-index 3afe0e8cb..8c5f74508 100644
+index c09939134..79e020277 100644
 --- a/Telegram/SourceFiles/history/history_widget.cpp
 +++ b/Telegram/SourceFiles/history/history_widget.cpp
-@@ -13,6 +13,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
- #include "api/api_sending.h"
- #include "api/api_text_entities.h"
- #include "api/api_send_progress.h"
-+#include "api/api_blocked_peers.h"
- #include "boxes/confirm_box.h"
- #include "boxes/send_files_box.h"
- #include "boxes/share_box.h"
-@@ -640,6 +641,34 @@ HistoryWidget::HistoryWidget(
+@@ -682,6 +682,36 @@ HistoryWidget::HistoryWidget(
  		});
  	}, lifetime());
  
-+	BlockUsersInGroupsChanges(
++	::Kotato::JsonSettings::Events(
++		"block_users_in_groups"
 +	) | rpl::start_with_next([=] {
 +		crl::on_main(this, [=] {
 +			if (_history) {
@@ -136,7 +95,8 @@ index 3afe0e8cb..8c5f74508 100644
 +		});
 +	}, lifetime());
 +
-+	session().api().blockedPeers().slice(
++	session().changes().peerUpdates(
++		Data::PeerUpdate::Flag::IsBlocked
 +	) | rpl::start_with_next([=] {
 +		crl::on_main(this, [=] {
 +			if (_history) {
@@ -150,26 +110,26 @@ index 3afe0e8cb..8c5f74508 100644
 +		});
 +	}, lifetime());
 +
- 	HoverEmojiPanelChanges(
- 	) | rpl::start_with_next([=] {
- 		crl::on_main(this, [=] {
+ 	session().data().animationPlayInlineRequest(
+ 	) | rpl::start_with_next([=](not_null<HistoryItem*> item) {
+ 		if (const auto view = item->mainView()) {
 diff --git a/Telegram/SourceFiles/history/view/history_view_element.cpp b/Telegram/SourceFiles/history/view/history_view_element.cpp
-index e588bdb92..ee8133474 100644
+index f6938da0c..975d502ae 100644
 --- a/Telegram/SourceFiles/history/view/history_view_element.cpp
 +++ b/Telegram/SourceFiles/history/view/history_view_element.cpp
-@@ -28,6 +28,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
+@@ -35,6 +35,7 @@ For license and copyright information please follow this link:
  #include "ui/toast/toast.h"
  #include "ui/toasts/common_toasts.h"
  #include "data/data_session.h"
 +#include "data/data_user.h"
  #include "data/data_groups.h"
  #include "data/data_media_types.h"
- #include "lang/lang_keys.h"
-@@ -477,6 +478,12 @@ bool Element::isHiddenByGroup() const {
+ #include "data/data_sponsored_messages.h"
+@@ -521,6 +522,12 @@ bool Element::isHiddenByGroup() const {
  }
  
  bool Element::isHidden() const {
-+	if (BlockUsersInGroups()
++	if (::Kotato::JsonSettings::GetBool("block_users_in_groups")
 +		&& data()->from()->isUser()
 +		&& data()->from()->asUser()->isBlocked()) {
 +		return true;
@@ -178,78 +138,94 @@ index e588bdb92..ee8133474 100644
  	return isHiddenByGroup();
  }
  
-diff --git a/Telegram/SourceFiles/kotato/json_settings.cpp b/Telegram/SourceFiles/kotato/json_settings.cpp
-index 300721b38..b44cd926b 100644
---- a/Telegram/SourceFiles/kotato/json_settings.cpp
-+++ b/Telegram/SourceFiles/kotato/json_settings.cpp
-@@ -366,6 +366,7 @@ QByteArray GenerateSettingsJson(bool areDefault = false) {
- 	settings.insert(qsl("sticker_scale_both"), StickerScaleBoth());
- 	settings.insert(qsl("adaptive_bubbles"), AdaptiveBubbles());
- 	settings.insert(qsl("big_emoji_outline"), BigEmojiOutline());
-+	settings.insert(qsl("block_users_in_groups"), BlockUsersInGroups());
- 	settings.insert(qsl("always_show_scheduled"), cAlwaysShowScheduled());
- 	settings.insert(qsl("show_chat_id"), ShowChatId());
- 	settings.insert(qsl("show_phone_in_drawer"), cShowPhoneInDrawer());
-@@ -525,6 +526,10 @@ bool Manager::readCustomFile() {
- 		SetBigEmojiOutline(v);
- 	});
- 
-+	ReadBoolOption(settings, "block_users_in_groups", [&](auto v) {
-+		SetBlockUsersInGroups(v);
-+	});
-+
- 	ReadBoolOption(settings, "always_show_scheduled", [&](auto v) {
- 		cSetAlwaysShowScheduled(v);
- 	});
-diff --git a/Telegram/SourceFiles/kotato/settings.cpp b/Telegram/SourceFiles/kotato/settings.cpp
-index 524f7ca60..c94512b28 100644
---- a/Telegram/SourceFiles/kotato/settings.cpp
-+++ b/Telegram/SourceFiles/kotato/settings.cpp
-@@ -79,6 +79,17 @@ rpl::producer<bool> MonospaceLargeBubblesChanges() {
- 	return gMonospaceLargeBubbles.changes();
- }
- 
-+rpl::variable<bool> gBlockUsersInGroups = false;
-+void SetBlockUsersInGroups(bool enabled) {
-+	gBlockUsersInGroups = enabled;
-+}
-+bool BlockUsersInGroups() {
-+	return gBlockUsersInGroups.current();
-+}
-+rpl::producer<bool> BlockUsersInGroupsChanges() {
-+	return gBlockUsersInGroups.changes();
-+}
-+
- bool gAlwaysShowScheduled = false;
- 
- rpl::variable<int> gShowChatId = 2;
-diff --git a/Telegram/SourceFiles/kotato/settings.h b/Telegram/SourceFiles/kotato/settings.h
-index a3eca2017..f54fec547 100644
---- a/Telegram/SourceFiles/kotato/settings.h
-+++ b/Telegram/SourceFiles/kotato/settings.h
-@@ -62,6 +62,10 @@ void SetMonospaceLargeBubbles(bool enabled);
- [[nodiscard]] bool MonospaceLargeBubbles();
- [[nodiscard]] rpl::producer<bool> MonospaceLargeBubblesChanges();
- 
-+void SetBlockUsersInGroups(bool enabled);
-+[[nodiscard]] bool BlockUsersInGroups();
-+[[nodiscard]] rpl::producer<bool> BlockUsersInGroupsChanges();
-+
- DeclareSetting(bool, AlwaysShowScheduled);
- 
- void SetShowChatId(int chatIdType);
-diff --git a/Telegram/SourceFiles/kotato/settings_menu.cpp b/Telegram/SourceFiles/kotato/settings_menu.cpp
-index 21cf96920..53ad9bfe9 100644
---- a/Telegram/SourceFiles/kotato/settings_menu.cpp
-+++ b/Telegram/SourceFiles/kotato/settings_menu.cpp
-@@ -379,6 +379,7 @@ void SetupKotatoMessages(not_null<Ui::VerticalLayout*> container) {
+diff --git a/Telegram/SourceFiles/kotato/kotato_settings.cpp b/Telegram/SourceFiles/kotato/kotato_settings.cpp
+index 9b0513d82..ebceb4f8f 100644
+--- a/Telegram/SourceFiles/kotato/kotato_settings.cpp
++++ b/Telegram/SourceFiles/kotato/kotato_settings.cpp
+@@ -326,6 +326,9 @@ const std::map<QString, Definition, std::greater<QString>> DefinitionMap {
+ 	{ "big_emoji_outline", {
+ 		.type = SettingType::BoolSetting,
+ 		.defaultValue = true, }},
++	{ "block_users_in_groups", {
++		.type = SettingType::BoolSetting,
++		.defaultValue = true, }},
+ 	{ "sticker_height", {
+ 		.type = SettingType::IntSetting,
+ 		.defaultValue = 170,
+diff --git a/Telegram/SourceFiles/kotato/kotato_settings_menu.cpp b/Telegram/SourceFiles/kotato/kotato_settings_menu.cpp
+index 88249d0d3..73ef1f8a2 100644
+--- a/Telegram/SourceFiles/kotato/kotato_settings_menu.cpp
++++ b/Telegram/SourceFiles/kotato/kotato_settings_menu.cpp
+@@ -472,6 +472,7 @@ void SetupKotatoMessages(not_null<Ui::VerticalLayout*> container) {
  	}
  
- 	SettingsMenuSwitch(ktg_settings_emoji_outline, BigEmojiOutline);
-+	SettingsMenuSwitch(ktg_settings_block_users_in_groups, BlockUsersInGroups);
+ 	SettingsMenuJsonSwitch(ktg_settings_emoji_outline, big_emoji_outline);
++	SettingsMenuJsonSwitch(ktg_settings_block_users_in_groups, block_users_in_groups);
  
  	AddSkip(container);
  }
--- 
-2.33.0.windows.2
-
+diff --git a/Telegram/SourceFiles/main/main_session.cpp b/Telegram/SourceFiles/main/main_session.cpp
+index 084137b82..cf882a238 100644
+--- a/Telegram/SourceFiles/main/main_session.cpp
++++ b/Telegram/SourceFiles/main/main_session.cpp
+@@ -11,6 +11,7 @@ For license and copyright information please follow this link:
+ #include "api/api_updates.h"
+ #include "api/api_send_progress.h"
+ #include "api/api_user_privacy.h"
++#include "api/api_blocked_peers.h"
+ #include "main/main_account.h"
+ #include "main/main_domain.h"
+ #include "main/main_session_settings.h"
+@@ -68,6 +69,43 @@ constexpr auto kTmpPasswordReserveTime = TimeId(10);
+ 	return MTP::ConfigFields().internalLinksDomain;
+ }
+ 
++void InitializeBlockedPeers(not_null<Main::Session*> session) {
++	const auto offset = std::make_shared<int>(0);
++	const auto allLoaded = std::make_shared<bool>(false);
++	const auto applySlice = [=](
++			const Api::BlockedPeers::Slice &slice,
++			auto self) -> void {
++		if (slice.list.empty()) {
++			*allLoaded = true;
++		}
++
++		*offset += slice.list.size();
++		for (const auto &item : slice.list) {
++			if (const auto peer = session->data().peerLoaded(item.id)) {
++				peer->setIsBlocked(true);
++			}
++		}
++		if (*offset >= slice.total) {
++			*allLoaded = true;
++		}
++
++		if (!*allLoaded) {
++			session->api().blockedPeers().request(
++				*offset,
++				[=](const Api::BlockedPeers::Slice &slice) {
++					self(slice, self);
++				});
++		}
++	};
++
++	session->api().blockedPeers().slice(
++	) | rpl::take(
++		1
++	) | rpl::start_with_next([=](const Api::BlockedPeers::Slice &result) {
++		applySlice(result, applySlice);
++	}, session->lifetime());
++}
++
+ } // namespace
+ 
+ Session::Session(
+@@ -158,6 +196,8 @@ Session::Session(
+ 	_api->requestNotifySettings(MTP_inputNotifyUsers());
+ 	_api->requestNotifySettings(MTP_inputNotifyChats());
+ 	_api->requestNotifySettings(MTP_inputNotifyBroadcasts());
++
++	InitializeBlockedPeers(this);
+ }
+ 
+ void Session::setTmpPassword(const QByteArray &password, TimeId validUntil) {

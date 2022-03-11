@@ -8,17 +8,18 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and publish kotatogram-desktop
     container:
-      image: "fedora:35"
+      image: fedora:35
       options: --privileged
       volumes:
         - /sys/fs/cgroup:/sys/fs/cgroup
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
       - name: Build
         run: |
           echo 'max_parallel_downloads=20' >> /etc/dnf/dnf.conf && \
+          dnf -y up && \
           dnf -y install fedora-packager rpmdevtools sudo https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
           https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
           useradd -m builduser && \
@@ -26,9 +27,8 @@ jobs:
           sudo -i -u builduser rpmdev-setuptree
           bash entrypoint.sh kotatogram-desktop
 
-
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build--${{ env.VERSION }}
           path: /home/builduser/rpmbuild/RPMS/x86_64/*
@@ -37,7 +37,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: /home/builduser/rpmbuild/RPMS/x86_64/*
-          name: Kotatogram-desktop-${{ env.VERSION }}
+          name: kotatogram-desktop-${{ env.VERSION }}
           tag_name: ${{ env.VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

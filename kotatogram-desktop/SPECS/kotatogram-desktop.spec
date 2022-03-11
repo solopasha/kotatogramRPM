@@ -11,8 +11,8 @@
 %global _name telegram-desktop
 
 Name: kotatogram-desktop
-Version: 1.4.8
-Release: 10%{?dist}
+Version: 1.4.9
+Release: 1%{?dist}
 
 %global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
@@ -23,11 +23,10 @@ Release: 10%{?dist}
 License: GPLv3+ and LGPLv2+ and LGPLv3
 URL: https://github.com/kotatogram/%{appname}
 Summary: Experimental Telegram Desktop fork
-Source0: kotatogram-desktop.tar.zst
-#Patch0: 0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
-Patch0: %{_name}-desktop-validation-fix.patch
-Patch1: no-add.patch
-Patch2: 0007_hide-messages-from-blocked-users.patch
+Source0: https://github.com/kotatogram/kotatogram-desktop/releases/download/k%{version}/kotatogram-desktop-%{version}-full.tar.gz
+Patch0: 0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
+Patch1: %{_name}-desktop-validation-fix.patch
+Patch2: no-add.patch
 Patch100: %{_name}-ffmpeg5.patch
 
 # Telegram Desktop require more than 8 GB of RAM on linking stage.
@@ -171,7 +170,7 @@ like SMS and email combined — and can take care of all your personal or
 business messaging needs.
 
 %prep
-%autosetup -n %{appname} -p1
+%autosetup -n %{appname}-%{version}-full -p1
 # Unbundling libraries...
 #rm -rf Telegram/ThirdParty/{GSL,QR,SPMediaKeyTap,dispatch,expected,extra-cmake-modules,fcitx-qt5,fcitx5-qt,jemalloc,hime,hunspell,lz4,materialdecoration,minizip,nimf,plasma-wayland-protocols,qt5ct,range-v3,wayland-protocols,xxHash}
 
@@ -221,7 +220,9 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{launcher}.desktop
 %{_metainfodir}/%{launcher}.metainfo.xml
 
 %changelog
-* Fri Feb 21 2022 solopasha <pasha@solopasha.ru> - 1.4.8-7
+* Fri Mar 11 2022 solopasha <pasha@solopasha.ru> - 1.4.9-1
+- Version 1.4.9 update
+* Mon Feb 21 2022 solopasha <pasha@solopasha.ru> - 1.4.8-7
 - Add some stuff from telegram-desktop.spec
 * Fri Feb 18 2022 solopasha <pasha@solopasha.ru> - 1.4.8-6
 - Version 1.4.8
