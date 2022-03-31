@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and publish kotatogram-desktop
     container:
-      image: fedora:35
+      image: fedora:36
       options: --privileged
       volumes:
         - /sys/fs/cgroup:/sys/fs/cgroup
