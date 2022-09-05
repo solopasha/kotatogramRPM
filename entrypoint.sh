@@ -5,14 +5,10 @@ if [ -z "$1" ]; then
     echo "Please specify package to build"
     exit 1
 fi
-
-cp -r "$1"/* /home/builduser/rpmbuild
-
-cd /home/builduser/rpmbuild
-chown -R builduser:builduser ./*
-VERSION=$(awk -v ORS= '/^Version:/{print $2"-"} /^Release:/{sub(/%{\?dist}/, ""); print $2}' SPECS/kotatogram-desktop.spec)
-VERSION+=$(rpm -E %dist)
+VERSION="$(rpmspec -q --qf "%{version}-%{release}\n" "$1.spec" | head -1)"
 echo "VERSION=$VERSION" >> $GITHUB_ENV
-dnf -y builddep "SPECS/$1.spec"
-su -c 'spectool -g -R SPECS/*.spec' builduser
-su -c 'rpmbuild -bb SPECS/*.spec' builduser
+sudo -s -u builduser -- <<EOF
+spectool -g "$1.spec"
+fedpkg --release f36 srpm
+mock -r fedora-$(rpm -E %fedora)-$(uname -m)-rpmfusion_free --rebuild "$1-$VERSION.src.rpm" --enable-network --isolation=simple
+EOF

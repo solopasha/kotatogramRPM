@@ -22,21 +22,23 @@ jobs:
           dnf -y up && \
           dnf -y install fedora-packager rpmdevtools sudo https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
           https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
-          useradd -m builduser && \
+          dnf -y install mock-rpmfusion-free && \
+          useradd -m -G mock builduser && \
           echo 'builduser ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builduser && \
-          sudo -i -u builduser rpmdev-setuptree
+          chown -R builduser:builduser ./
           bash entrypoint.sh kotatogram-desktop
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
+        if: success() || failure()
         with:
-          name: build--${{ env.VERSION }}
-          path: /home/builduser/rpmbuild/RPMS/x86_64/*
+          name: build-${{ env.VERSION }}
+          path: /var/lib/mock/fedora-36-x86_64/result/*
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
-          files: /home/builduser/rpmbuild/RPMS/x86_64/*
+          files: /var/lib/mock/fedora-36-x86_64/result/*
           name: kotatogram-desktop-${{ env.VERSION }}
           tag_name: ${{ env.VERSION }}
         env:
