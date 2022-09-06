@@ -12,7 +12,7 @@
 
 Name: kotatogram-desktop
 Version: 1.4.9
-Release: 3%{?dist}
+Release: 4%{?dist}
 
 %global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
@@ -31,6 +31,8 @@ Patch4:     https://github.com/kotatogram/kotatogram-desktop/pull/333.patch
 Patch5:     https://github.com/kotatogram/kotatogram-desktop/pull/334.patch
 Patch6:     https://github.com/kotatogram/kotatogram-desktop/pull/335.patch
 Patch7:     https://github.com/kotatogram/kotatogram-desktop/pull/337.patch
+Patch72:    25012.patch
+Patch73:    telegram-desktop-ffmpeg5.patch
 Patch8:     kf594.patch
 Patch9:     include.patch
 Patch10:    https://patch-diff.githubusercontent.com/raw/desktop-app/tg_owt/pull/101.patch
@@ -45,7 +47,6 @@ BuildRequires: pkgconfig(epoxy)
 BuildRequires: pkgconfig(gbm)
 BuildRequires: pkgconfig(libdrm)
 BuildRequires: pkgconfig(libpipewire-0.3)
-BuildRequires: pkgconfig(usrsctp)
 BuildRequires: pkgconfig(x11)
 BuildRequires: pkgconfig(xcomposite)
 BuildRequires: pkgconfig(xdamage)
@@ -55,7 +56,6 @@ BuildRequires: pkgconfig(xrandr)
 BuildRequires: pkgconfig(xrender)
 BuildRequires: pkgconfig(xtst)
 BuildRequires: yasm
-
 
 BuildRequires: cmake(Microsoft.GSL)
 BuildRequires: cmake(OpenAL)
@@ -167,16 +167,11 @@ BuildRequires: pkgconfig(libcrypto)
 BuildRequires: pkgconfig(openssl)
 %endif
 
-# Fedora now has a stripped ffmpeg. Make sure we're using the full version.
-%if 0%{?fedora} && 0%{?fedora} >= 36
-BuildRequires: compat-ffmpeg4-devel
-%else
 BuildRequires: pkgconfig(libavcodec)
 BuildRequires: pkgconfig(libavformat)
 BuildRequires: pkgconfig(libavutil)
 BuildRequires: pkgconfig(libswresample)
 BuildRequires: pkgconfig(libswscale)
-%endif
 
 Requires: hicolor-icon-theme
 
@@ -207,6 +202,9 @@ Provides: bundled(rlottie) = 0~git8c69fc2
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
+%patch72 -p1
+%patch73 -p1
+
 # Unbundling libraries...
 rm -rf Telegram/ThirdParty/{GSL,QR,dispatch,expected,fcitx-qt5,fcitx5-qt,hime,hunspell,jemalloc,lz4,minizip,nimf,range-v3,xxHash}
 
@@ -219,17 +217,11 @@ git checkout 63a934db1ed212ebf8aaaa20f0010dd7b0d7b396
 %patch10 -p1
 
 %build
-# Setting pkgconfig path for compat-ffmpeg4...
-%if 0%{?fedora} && 0%{?fedora} >= 36
-export PKG_CONFIG_PATH="%{_libdir}/compat-ffmpeg4/pkgconfig/"
-%endif
-
 cd %{_builddir}/Libraries/tg_owt
 CXXFLAGS+=" -I/usr/include/libdrm" cmake \
     -B build \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DTG_OWT_USE_PROTOBUF=OFF \
     -DTG_OWT_PACKAGED_BUILD=ON \
@@ -237,7 +229,6 @@ CXXFLAGS+=" -I/usr/include/libdrm" cmake \
 ninja -C build
 
 cd %{_builddir}/%{appname}-%{version}-full
-# Building Telegram Desktop using cmake...
 %cmake -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_AR=%{_bindir}/gcc-ar \
@@ -286,6 +277,8 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{launcher}.desktop
 %{_metainfodir}/%{launcher}.metainfo.xml
 
 %changelog
+* Tue Sep 6 2022 solopasha <pasha@solopasha.ru> - 1.4.9-4
+- Switch to ffmpeg 5
 * Mon Sep 5 2022 solopasha <pasha@solopasha.ru> - 1.4.9-3
 - Fix build, use qt5, ffmpeg 4.4
 * Fri Mar 11 2022 solopasha <pasha@solopasha.ru> - 1.4.9-2
