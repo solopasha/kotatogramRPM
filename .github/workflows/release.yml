@@ -36,10 +36,10 @@ jobs:
           path: /var/lib/mock/fedora-36-x86_64/result/*
 
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
           files: /var/lib/mock/fedora-36-x86_64/result/*
-          name: kotatogram-desktop-${{ env.VERSION }}
-          tag_name: ${{ env.VERSION }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          title: kotatogram-desktop-${{ env.VERSION }}
+          automatic_release_tag: ${{ env.VERSION }}
