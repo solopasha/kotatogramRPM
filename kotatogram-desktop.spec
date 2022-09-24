@@ -8,7 +8,6 @@
 # Telegram Desktop's constants...
 %global appname kotatogram-desktop
 %global launcher kotatogramdesktop
-%global _name telegram-desktop
 
 Name: kotatogram-desktop
 Version: 1.4.9
