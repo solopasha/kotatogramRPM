@@ -11,7 +11,7 @@
 
 Name: kotatogram-desktop
 Version: 1.4.9
-Release: 4%{?dist}
+Release: 5%{?dist}
 
 %global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
@@ -276,6 +276,8 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{launcher}.desktop
 %{_metainfodir}/%{launcher}.metainfo.xml
 
 %changelog
+* Fri Sep 30 2022 solopasha <pasha@solopasha.ru> - 1.4.9-5
+- Rebuild due to Qt update
 * Tue Sep 6 2022 solopasha <pasha@solopasha.ru> - 1.4.9-4
 - Switch to ffmpeg 5
 * Mon Sep 5 2022 solopasha <pasha@solopasha.ru> - 1.4.9-3
