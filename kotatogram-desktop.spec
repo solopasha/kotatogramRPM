@@ -11,7 +11,7 @@
 
 Name: kotatogram-desktop
 Version: 1.4.9
-Release: 5%{?dist}
+Release: 6%{?dist}
 
 %global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
