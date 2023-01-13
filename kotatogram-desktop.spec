@@ -11,7 +11,7 @@
 
 Name: kotatogram-desktop
 Version: 1.4.9
-Release: 6%{?dist}
+Release: 7%{?dist}
 
 %global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
@@ -107,7 +107,7 @@ BuildRequires: cmake(Qt5Svg)
 BuildRequires: cmake(Qt5Widgets)
 BuildRequires: cmake(Qt5XkbCommonSupport)
 BuildRequires: qt5-qtbase-private-devel
-%{?_qt5:Requires: %{_qt5}%{?_isa} = %{_qt5_version}}
+%{?_qt5:Requires: %{_qt5}%{?_isa}}
 Requires: qt5-qtimageformats%{?_isa}
 %else
 BuildRequires: cmake(Qt6Core)
@@ -152,8 +152,8 @@ BuildRequires: pkgconfig(xcb-screensaver)
 %endif
 
 %if 0%{?fedora} && 0%{?fedora} >= 37
-BuildRequires: pkgconfig(webkit2gtk-5.0)
-Requires: webkit2gtk5.0%{?_isa}
+BuildRequires: pkgconfig(webkit2gtk-4.1)
+Requires: webkit2gtk4.1%{?_isa}
 %else
 BuildRequires: pkgconfig(webkit2gtk-4.0)
 Requires: webkit2gtk3%{?_isa}
@@ -211,7 +211,7 @@ mkdir ../Libraries
 cd ../Libraries
 git clone --recursive https://github.com/desktop-app/tg_owt.git
 cd tg_owt
-git checkout 63a934db1ed212ebf8aaaa20f0010dd7b0d7b396
+git reset --hard 63a934db1ed212ebf8aaaa20f0010dd7b0d7b396
 %patch9 -p1
 %patch10 -p1
 
