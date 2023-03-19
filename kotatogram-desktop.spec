@@ -4,6 +4,7 @@
 %global enable_wayland 1
 %global enable_x11 1
 %global use_qt5 1
+%global legacy_openssl 1
 
 # Telegram Desktop's constants...
 %global appname kotatogram-desktop
@@ -11,7 +12,7 @@
 
 Name: kotatogram-desktop
 Version: 1.4.9
-Release: 7%{?dist}
+Release: 8%{?dist}
 
 %global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
@@ -159,8 +160,9 @@ BuildRequires: pkgconfig(webkit2gtk-4.0)
 Requires: webkit2gtk3%{?_isa}
 %endif
 
-%if 0%{?fedora} && 0%{?fedora} >= 36
+%if %{legacy_openssl}
 BuildRequires: openssl1.1-devel
+Requires: openssl1.1%{?_isa}
 %else
 BuildRequires: pkgconfig(libcrypto)
 BuildRequires: pkgconfig(openssl)
