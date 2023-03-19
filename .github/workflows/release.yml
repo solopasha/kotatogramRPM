@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and publish kotatogram-desktop
     container:
-      image: "registry.fedoraproject.org/fedora:37"
+      image: "registry.fedoraproject.org/fedora:38"
       options: --privileged
       volumes:
         - /sys/fs/cgroup:/sys/fs/cgroup
@@ -33,13 +33,13 @@ jobs:
         if: success() || failure()
         with:
           name: build-${{ env.VERSION }}
-          path: /var/lib/mock/fedora-37-x86_64/result/*
+          path: /var/lib/mock/fedora-38-x86_64/result/*
 
       - name: Create release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
-          files: /var/lib/mock/fedora-37-x86_64/result/*
+          files: /var/lib/mock/fedora-38-x86_64/result/*
           title: kotatogram-desktop-${{ env.VERSION }}
           automatic_release_tag: ${{ env.VERSION }}
