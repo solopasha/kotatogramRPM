@@ -16,6 +16,10 @@ Release: 8%{?dist}
 
 %global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
+%if 0%{?fedora} && 0%{?fedora} >= 38
+%global optflags %(echo %{optflags} -fabi-compat-version=0)
+%endif
+
 # Application and 3rd-party modules licensing:
 # * Telegram Desktop - GPLv3+ with OpenSSL exception -- main tarball;
 # * rlottie - LGPLv2+ -- static dependency;
@@ -25,17 +29,16 @@ URL:        https://github.com/kotatogram/%{appname}
 Summary:    Experimental Telegram Desktop fork
 Source0:    https://github.com/kotatogram/kotatogram-desktop/releases/download/k%{version}/kotatogram-desktop-%{version}-full.tar.gz
 Patch0:     0001-Add-an-option-to-hide-messages-from-blocked-users-in.patch
-Patch2:     no-add.patch
-Patch3:     https://github.com/kotatogram/kotatogram-desktop/pull/326.patch
-Patch4:     https://github.com/kotatogram/kotatogram-desktop/pull/333.patch
-Patch5:     https://github.com/kotatogram/kotatogram-desktop/pull/334.patch
-Patch6:     https://github.com/kotatogram/kotatogram-desktop/pull/335.patch
-Patch7:     https://github.com/kotatogram/kotatogram-desktop/pull/337.patch
-Patch72:    25012.patch
-Patch73:    telegram-desktop-ffmpeg5.patch
-Patch8:     kf594.patch
-Patch9:     include.patch
-Patch10:    https://patch-diff.githubusercontent.com/raw/desktop-app/tg_owt/pull/101.patch
+Patch1:     no-add.patch
+Patch2:     https://github.com/kotatogram/kotatogram-desktop/pull/326.patch
+Patch3:     https://github.com/kotatogram/kotatogram-desktop/pull/333.patch
+Patch4:     https://github.com/kotatogram/kotatogram-desktop/pull/334.patch
+Patch5:     https://github.com/kotatogram/kotatogram-desktop/pull/335.patch
+Patch6:     https://github.com/kotatogram/kotatogram-desktop/pull/337.patch
+Patch7:     25012.patch
+Patch8:     telegram-desktop-ffmpeg5.patch
+Patch9:     kf594.patch
+Source100:  include.patch
 
 
 # Telegram Desktop require more than 8 GB of RAM on linking stage.
@@ -194,18 +197,7 @@ Provides: bundled(rlottie) = 0~git8c69fc2
 %{summary}.
 
 %prep
-%setup -q -n %{appname}-%{version}-full
-%patch0 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch72 -p1
-%patch73 -p1
-
+%autosetup -n %{appname}-%{version}-full -p1
 # Unbundling libraries...
 rm -rf Telegram/ThirdParty/{GSL,QR,dispatch,expected,fcitx-qt5,fcitx5-qt,hime,hunspell,jemalloc,lz4,minizip,nimf,range-v3,xxHash}
 
@@ -214,12 +206,11 @@ cd ../Libraries
 git clone --recursive https://github.com/desktop-app/tg_owt.git
 cd tg_owt
 git reset --hard 63a934db1ed212ebf8aaaa20f0010dd7b0d7b396
-%patch9 -p1
-%patch10 -p1
+patch -Np1 -i %{SOURCE100}
 
 %build
 cd %{_builddir}/Libraries/tg_owt
-CXXFLAGS+=" -I/usr/include/libdrm" cmake \
+cmake \
     -B build \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
@@ -227,7 +218,7 @@ CXXFLAGS+=" -I/usr/include/libdrm" cmake \
     -DTG_OWT_USE_PROTOBUF=OFF \
     -DTG_OWT_PACKAGED_BUILD=ON \
     -DBUILD_SHARED_LIBS=OFF
-ninja -C build
+CXXFLAGS+=" -I/usr/include/libdrm" ninja -C build
 
 cd %{_builddir}/%{appname}-%{version}-full
 %cmake -G Ninja \
@@ -278,19 +269,4 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{launcher}.desktop
 %{_metainfodir}/%{launcher}.metainfo.xml
 
 %changelog
-* Fri Sep 30 2022 solopasha <pasha@solopasha.ru> - 1.4.9-5
-- Rebuild due to Qt update
-* Tue Sep 6 2022 solopasha <pasha@solopasha.ru> - 1.4.9-4
-- Switch to ffmpeg 5
-* Mon Sep 5 2022 solopasha <pasha@solopasha.ru> - 1.4.9-3
-- Fix build, use qt5, ffmpeg 4.4
-* Fri Mar 11 2022 solopasha <pasha@solopasha.ru> - 1.4.9-2
-- Add some patches
-* Fri Mar 11 2022 solopasha <pasha@solopasha.ru> - 1.4.9-1
-- Version 1.4.9 update
-* Mon Feb 21 2022 solopasha <pasha@solopasha.ru> - 1.4.8-7
-- Add some stuff from telegram-desktop.spec
-* Fri Feb 18 2022 solopasha <pasha@solopasha.ru> - 1.4.8-6
-- Version 1.4.8
-* Sat Aug 21 2021 solopasha <pasha@solopasha.ru> - 1.4.2
-- Version 1.4.2
+
