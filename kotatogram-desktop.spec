@@ -12,7 +12,7 @@
 
 Name: kotatogram-desktop
 Version: 1.4.9
-Release: 8%{?dist}
+Release: 9%{?dist}
 
 %global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
 
@@ -269,4 +269,3 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{launcher}.desktop
 %{_metainfodir}/%{launcher}.metainfo.xml
 
 %changelog
-
